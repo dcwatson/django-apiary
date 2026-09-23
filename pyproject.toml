@@ -1,0 +1,27 @@
+[project]
+name = "django-apiary"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Dan Watson", email = "dcwatson@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "msgspec>=0.21.1",
+]
+
+[project.scripts]
+apiary = "apiary:main"
+
+[build-system]
+requires = ["uv_build>=0.12.12,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "django>=6.0",
+]
+
+[tool.uv.build-backend]
+module-name = "apiary"
