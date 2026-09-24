@@ -1,3 +1,4 @@
+import math
 import time
 
 import msgspec
@@ -68,13 +69,17 @@ class Throttle(APIMiddleware):
     ):
         super().__init__()
         self.windows = tuple(self._parse_rate(r) for r in rates)
-        self.max_duration = max(w[1] for w in self.windows)
+        self.max_duration = max(w[1] for w in self.windows) if self.windows else 0
         self.cache = caches[cache]
         self.bucket = (
             Bucket(size=bucket_size, fill_rate=fill_rate)
             if bucket_size and fill_rate
             else None
         )
+        if self.bucket:
+            self.max_duration = max(
+                self.max_duration, math.ceil(self.bucket.size / self.bucket.fill_rate)
+            )
 
     def _parse_rate(self, rate: str) -> tuple[int, int]:
         num, period = rate.split("/", 1)
