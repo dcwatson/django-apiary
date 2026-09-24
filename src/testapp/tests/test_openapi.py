@@ -171,6 +171,7 @@ class OpenAPITests(SimpleTestCase):
                 "/api/v1/issue/{issue_id}/",
                 "/api/v1/search/",
                 "/api/v1/search/{search_id}/",
+                "/api/v1/throttled/",
             },
         )
         issue = paths["/api/v1/issue/{issue_id}/"]["post"]

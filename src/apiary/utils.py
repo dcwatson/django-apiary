@@ -1,4 +1,5 @@
 import inspect
+import ipaddress
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -143,3 +144,16 @@ class FastJsonResponse(HttpResponse):
         if indent is not None and indent > 0:
             content = msgspec.json.format(content, indent=indent)
         super().__init__(content=content, **kwargs)
+
+
+def get_ip(request: HttpRequest) -> str:
+    ip_address = request.META.get("HTTP_X_FORWARDED_FOR", "").strip()
+    if ip_address:
+        ip_address = ip_address.split(",")[0].strip()
+    if not ip_address:
+        ip_address = request.META.get("REMOTE_ADDR", "127.0.0.1").strip()
+    try:
+        # Validate and normalize the IP address.
+        return str(ipaddress.ip_address(ip_address))
+    except ValueError:
+        return ""

@@ -55,7 +55,7 @@ class HeaderView(APIView):
     # This ensures the type-checker knows about our Headers and not the default APIView.Headers
     headers: Headers
 
-    def get(self, request: HttpRequest) -> Response:
+    def get(self, request: HttpRequest):
         return self.headers
 ```
 

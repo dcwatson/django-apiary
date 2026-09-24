@@ -71,3 +71,8 @@ class SearchAPI(APIView):
 class SavedSearchAPI(APIView):
     def get(self, request: HttpRequest, search_id: int):
         return {}
+
+
+class ThrottledAPI(APIView):
+    def get(self, request: HttpRequest):
+        return {}
