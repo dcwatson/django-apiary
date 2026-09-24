@@ -1,5 +1,7 @@
+import hashlib
 import math
 import time
+from typing import Annotated
 
 import msgspec
 from django.core.cache import DEFAULT_CACHE_ALIAS, caches
@@ -7,12 +9,12 @@ from django.http import HttpRequest, HttpResponse
 
 from .base import APIMiddleware
 from .exceptions import AuthenticationFailed, PermissionDenied
-from .utils import get_ip
+from .utils import get_ip, make_struct
 
 
 class Bucket(msgspec.Struct):
-    size: int
-    fill_rate: int
+    size: Annotated[int, msgspec.Meta(gt=0)]
+    fill_rate: Annotated[int, msgspec.Meta(gt=0)]
 
 
 class CacheEntry(msgspec.Struct):
@@ -66,20 +68,25 @@ class Throttle(APIMiddleware):
         bucket_size: int | None = None,
         fill_rate: int | None = None,
         cache: str = DEFAULT_CACHE_ALIAS,
+        scope: str = "",
     ):
         super().__init__()
         self.windows = tuple(self._parse_rate(r) for r in rates)
         self.max_duration = max(w[1] for w in self.windows) if self.windows else 0
         self.cache = caches[cache]
         self.bucket = (
-            Bucket(size=bucket_size, fill_rate=fill_rate)
-            if bucket_size and fill_rate
+            make_struct(Bucket, size=bucket_size, fill_rate=fill_rate)
+            if bucket_size is not None and fill_rate is not None
             else None
         )
         if self.bucket:
             self.max_duration = max(
                 self.max_duration, math.ceil(self.bucket.size / self.bucket.fill_rate)
             )
+        # Equivalent policies share usage across instances and workers. A scope
+        # lets callers give identical policies independent quotas.
+        policy = (scope, sorted(set(self.windows)), bucket_size, fill_rate)
+        self.policy_key = hashlib.sha256(msgspec.json.encode(policy)).hexdigest()
 
     def _parse_rate(self, rate: str) -> tuple[int, int]:
         num, period = rate.split("/", 1)
@@ -87,7 +94,7 @@ class Throttle(APIMiddleware):
 
     def cache_key(self, request: HttpRequest) -> str:
         ip = get_ip(request)
-        return f"apiary:throttle:{ip}"
+        return f"apiary:throttle:{self.policy_key}:{ip}"
 
     def token_count(self, request: HttpRequest) -> int:
         return 1
@@ -117,9 +124,7 @@ class Throttle(APIMiddleware):
             entry.fill(self.bucket, now)
             changed = True
             request_tokens = self.token_count(request)
-            if entry.tokens >= request_tokens:
-                entry.tokens -= request_tokens
-            else:
+            if entry.tokens < request_tokens:
                 allowed = False
         # No need to check all the windows if the bucket is empty.
         if allowed:
@@ -128,6 +133,8 @@ class Throttle(APIMiddleware):
                 if not entry.check_window(num_requests, now - duration):
                     allowed = False
         if allowed:
+            if self.bucket:
+                entry.tokens -= request_tokens
             entry.times.append(now)
             changed = True
         if changed:

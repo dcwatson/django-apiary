@@ -157,3 +157,11 @@ def get_ip(request: HttpRequest) -> str:
         return str(ipaddress.ip_address(ip_address))
     except ValueError:
         return ""
+
+
+def make_struct[T: msgspec.Struct](
+    obj_type: type[T],
+    strict: bool = True,
+    **fields: Any,
+) -> T:
+    return msgspec.convert(fields, type=obj_type, strict=strict)

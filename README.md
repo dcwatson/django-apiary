@@ -110,6 +110,16 @@ api_root = AuthenticatedAPI("/api")(...)
 ```
 
 
+### RequireAuth
+
+`RequireAuth` checks `request.user.is_authenticated` and raises `AuthenticationFailed` if the user is not authenticated. It may also accept a list of permissions to check; if the user does not have all the specified permissions, `PermissionDenied` is raised.
+
+
+### Throttle
+
+By default, throttles with equivalent rate windows and bucket settings share usage per IP. Use `scope` to give identical policies independent quotas, for example `Throttle("120/min", scope="search")` and `Throttle("120/min", scope="login")`. Different policies always use separate cache entries, even with the same scope.
+
+
 ## Regular (function) views
 
 Apiary also provides an `api_path` function that can be dropped in for Django's `path`, and calls your function-based views with the same data sourcing and argument sematics as `APIView`:
