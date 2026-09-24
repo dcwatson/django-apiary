@@ -1,7 +1,7 @@
 from django.test import Client, TestCase
 
 
-class BasicTests(TestCase):
+class ThrottleTests(TestCase):
     def setUp(self) -> None:
         # Sort JSON keys for deterministic comparisons.
         self.client = Client(headers={"x-json-sorted": "true"})
