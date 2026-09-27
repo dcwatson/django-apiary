@@ -147,7 +147,7 @@ class RequireAuth(APIMiddleware):
     check_perms: tuple[str, ...]
 
     def __init__(self, *children: APIMiddleware | str):
-        self.children = ()
+        super().__init__()
         self.check_perms = ()
         for child in children:
             if isinstance(child, APIMiddleware):

@@ -1,12 +1,18 @@
 [project]
 name = "django-apiary"
 version = "0.1.0"
-description = "Add your description here"
+description = "Typed API views for Django."
 readme = "README.md"
 authors = [
     { name = "Dan Watson", email = "dcwatson@gmail.com" }
 ]
-requires-python = ">=3.14"
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Django",
+    "Intended Audience :: Developers",
+]
+requires-python = ">=3.12"
 dependencies = [
     "msgspec>=0.21.1",
 ]

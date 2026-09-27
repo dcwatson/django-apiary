@@ -18,12 +18,12 @@ PATH_PARAM_REGEX = re.compile(r"<(?:[^:>]+:)?(?P<name>[^>]+)>")
 
 
 class APIMiddleware:
-    children: tuple[APIMiddleware, ...]
+    children: tuple["APIMiddleware", ...]
 
-    def __init__(self, *children: APIMiddleware):
+    def __init__(self, *children: "APIMiddleware"):
         self.children = children
 
-    def __call__(self, *children: APIMiddleware):
+    def __call__(self, *children: "APIMiddleware"):
         self.children += children
         return self
 
@@ -44,7 +44,7 @@ class APIMiddleware:
         """
 
     def urlpatterns(
-        self, stack: tuple[APIMiddleware, ...]
+        self, stack: tuple["APIMiddleware", ...]
     ) -> Generator[URLResolver | URLPattern]:
         """
         A generator yielding Django URLResolver or URLPattern objects.
@@ -53,7 +53,7 @@ class APIMiddleware:
             yield from child.urlpatterns(stack + (self,))
 
     def to_urlpatterns(
-        self, stack: tuple[APIMiddleware, ...] = ()
+        self, stack: tuple["APIMiddleware", ...] = ()
     ) -> list[URLResolver | URLPattern]:
         """
         A convenience method to return a list instead of a generator.
@@ -61,7 +61,7 @@ class APIMiddleware:
         return list(self.urlpatterns(stack))
 
     def to_urlpattern(
-        self, stack: tuple[APIMiddleware, ...] = ()
+        self, stack: tuple["APIMiddleware", ...] = ()
     ) -> list[URLResolver | URLPattern]:
         """
         A convenience method to return a single URL pattern. Will raise a RuntimeError
