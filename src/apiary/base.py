@@ -62,7 +62,7 @@ class APIMiddleware:
 
     def to_urlpattern(
         self, stack: tuple["APIMiddleware", ...] = ()
-    ) -> list[URLResolver | URLPattern]:
+    ) -> URLResolver | URLPattern:
         """
         A convenience method to return a single URL pattern. Will raise a RuntimeError
         if this middleware defines more or less than 1 pattern.
