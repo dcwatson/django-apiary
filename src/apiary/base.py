@@ -12,7 +12,13 @@ from django.urls import URLPattern, URLResolver, include, path
 from django.views import View
 
 from .exceptions import APIError
-from .utils import FastJsonResponse, build_args, build_data, parameter_name
+from .utils import (
+    FastJsonResponse,
+    build_args,
+    build_data,
+    parameter_name,
+    resolve_type,
+)
 
 PATH_PARAM_REGEX = re.compile(r"<(?:[^:>]+:)?(?P<name>[^>]+)>")
 
@@ -141,6 +147,16 @@ class APIView(View):
                     )
                 if param.kind is param.kind.VAR_POSITIONAL:
                     has_args = True
+                if (
+                    method in ("get", "head")
+                    and len(params) != 1
+                    and param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD)
+                    and name not in path_params
+                    and hasattr(resolve_type(param.annotation)[0], "fields")
+                ):
+                    raise TypeError(
+                        f"{handler_name} can only unpack a single structured parameter."
+                    )
                 path_params.discard(name)
             # Check to see if there are any path params without a matching handler
             # parameter (or *args).

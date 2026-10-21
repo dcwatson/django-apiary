@@ -37,6 +37,24 @@ The `post` method of this view could be called using form- or JSON-encoded data:
 {"authenticated":true,"username":"admin","token":"authtoken"}
 ```
 
+### Parameter unpacking
+
+Handlers may accept a single structured parameter (`msgspec.Struct`, dataclass, or `TypedDict`) whose fields are read directly from the querystring or request body when the parameter name does not otherwise appear in the data. For instance, the `post` handler above may be rewritten as:
+
+```python
+class AuthParams(msgspec.Struct):
+    username: str
+    password: str
+
+
+class AuthAPI(APIView):
+    def post(self, request: HttpRequest, params: AuthParams) -> Response: ...
+```
+
+And calling it with either `{"username":"admin","password":"letmein"}` or `{"params":{"username":"admin","password":"letmein"}}` will work.
+
+_Note that while POST/PATCH/etc requests may specify multiple structured parameters, each read from their own key in the request body, GET and HEAD handlers may only specify a single structured parameter for unpacking._
+
 
 ### Parameter aliases
 

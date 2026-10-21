@@ -60,6 +60,29 @@ def resolve_type(annotation: Any) -> tuple[msgspec.inspect.Type, bool]:
     return t, optional
 
 
+def data_for_fields(
+    data: MultiValueDict,
+    fields: tuple[msgspec.inspect.Field, ...],
+) -> dict[str, Any]:
+    """
+    Given some request data, and a number of fields that the data should be unpacked
+    into, returns a dict suitable for passing to `msgspec.convert`. Specifically, this
+    takes into account whether the keys should be read as lists or single values.
+    """
+    field_data = {}
+    for field in fields:
+        if field.encode_name not in data:
+            continue
+        if isinstance(field.type, msgspec.inspect.CollectionType):
+            # If field is a collection, use getlist.
+            value = data.getlist(field.encode_name)
+        else:
+            # Otherwise use the last defined value.
+            value = data[field.encode_name]
+        field_data[field.encode_name] = value
+    return field_data
+
+
 def build_args(
     handler: Callable,
     data: MultiValueDict,
@@ -111,7 +134,8 @@ def build_args(
         t, _optional = resolve_type(param.annotation)
         if len(params) == 1 and hasattr(t, "fields") and name not in remaining:
             # Special case for single object parameter, parse the source data directly.
-            value = msgspec.convert(data, param.annotation, strict=False)
+            field_data = data_for_fields(data, t.fields)
+            value = msgspec.convert(field_data, param.annotation, strict=False)
             if param.kind is param.kind.POSITIONAL_ONLY:
                 handler_args.append(value)
             else:
