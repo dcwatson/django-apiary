@@ -8,6 +8,7 @@ import msgspec
 from django.http import HttpRequest, HttpResponseBase
 
 from .base import PATH_PARAM_REGEX, APIMiddleware, APIView, Route
+from .utils import parameter_name
 
 
 class OpenAPIView(APIView):
@@ -111,10 +112,11 @@ def build_openapi(
                 continue
             if param.annotation is param.empty:
                 raise ValueError("Handler parameters must be type-annotated.")
-            if param.name in path_params:
+            name = parameter_name(param)
+            if name in path_params:
                 source = "path"
-                missing.discard(param.name)
-            elif param.name in (route.url_kwargs or {}):
+                missing.discard(name)
+            elif name in (route.url_kwargs or {}):
                 continue
             else:
                 source = default_source
@@ -132,15 +134,15 @@ def build_openapi(
                     body = schema
                     unpack_body = True
                 else:
-                    body["properties"][param.name] = schema
+                    body["properties"][name] = schema
                 if is_required:
-                    required.append(param.name)
+                    required.append(name)
             elif unpack:
                 query_object = schema
             else:
                 parameters.append(
                     {
-                        "name": param.name,
+                        "name": name,
                         "in": source,
                         "required": is_required,
                         "schema": schema,

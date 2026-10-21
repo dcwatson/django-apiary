@@ -12,7 +12,7 @@ from django.urls import URLPattern, URLResolver, include, path
 from django.views import View
 
 from .exceptions import APIError
-from .utils import FastJsonResponse, build_args, build_data
+from .utils import FastJsonResponse, build_args, build_data, parameter_name
 
 PATH_PARAM_REGEX = re.compile(r"<(?:[^:>]+:)?(?P<name>[^>]+)>")
 
@@ -121,6 +121,7 @@ class APIView(View):
                     stacklevel=2,
                 )
             for param in params:
+                name = parameter_name(param)
                 # Everything except *args and **kwargs must be type-annotated.
                 if param.annotation is param.empty and param.kind not in (
                     param.kind.VAR_KEYWORD,
@@ -131,7 +132,7 @@ class APIView(View):
                     )
                 if (
                     param.kind is param.kind.POSITIONAL_ONLY
-                    and param.name not in path_params
+                    and name not in path_params
                     and param.default is param.empty
                 ):
                     # Positional-only args are always pulled from the URL path params.
@@ -140,7 +141,7 @@ class APIView(View):
                     )
                 if param.kind is param.kind.VAR_POSITIONAL:
                     has_args = True
-                path_params.discard(param.name)
+                path_params.discard(name)
             # Check to see if there are any path params without a matching handler
             # parameter (or *args).
             if path_params and not has_args:

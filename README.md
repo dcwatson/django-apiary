@@ -38,6 +38,21 @@ The `post` method of this view could be called using form- or JSON-encoded data:
 ```
 
 
+### Parameter aliases
+
+Use `Alias` in an `Annotated` type to give a handler parameter a different external name:
+
+```python
+from typing import Annotated
+from apiary import Alias, APIView
+
+
+class SearchAPI(APIView):
+    def get(self, request, offset: Annotated[int, Alias("o")] = 0):
+        return {"offset": offset}
+```
+
+
 ## Typed Headers
 
 An `APIView` may define it's own inner `Headers` class as either a `msgspec.Struct`, dataclass, or `TypedDict`. Accessing `self.headers` will attempt to construct this type from `request.headers`, changing dashes to underscores in header names. Using `msgspec.Struct` allows you to specify the header name distinct from the attribute name in `Headers`.
