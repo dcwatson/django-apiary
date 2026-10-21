@@ -132,6 +132,7 @@ class APIView(View):
                 if (
                     param.kind is param.kind.POSITIONAL_ONLY
                     and param.name not in path_params
+                    and param.default is param.empty
                 ):
                     # Positional-only args are always pulled from the URL path params.
                     raise TypeError(

@@ -95,11 +95,14 @@ def build_args(
                 handler_kwargs[param.name] = value
         elif param.kind is param.kind.POSITIONAL_ONLY:
             # Positional-only parameters are always assigned from the URL parameters.
-            if param.name not in url_params:
+            if param.name in url_params:
+                handler_args.append(url_params[param.name])
+            elif param.default is not param.empty:
+                handler_args.append(param.default)
+            else:
                 raise ValueError(
                     f"Unknown URL parameter in {handler_name}: {param.name}"
                 )
-            handler_args.append(url_params[param.name])
         elif param.name in url_params:
             if param.kind is param.kind.KEYWORD_ONLY:
                 handler_kwargs[param.name] = url_params[param.name]
