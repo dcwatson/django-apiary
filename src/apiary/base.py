@@ -10,6 +10,7 @@ from django.http import HttpRequest, HttpResponseBase, QueryDict
 from django.shortcuts import render
 from django.urls import URLPattern, URLResolver, include, path
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 
 from .exceptions import APIError
 from .utils import (
@@ -285,6 +286,7 @@ class Route(APIMiddleware):
         view_class: type[APIView] | None = None,
         url_kwargs: dict[str, Any] | None = None,
         name: str | None = None,
+        csrf_exempt: bool = True,
         **view_kwargs: Any,
     ):
         super().__init__()
@@ -292,6 +294,7 @@ class Route(APIMiddleware):
         self.view_class = view_class
         self.url_kwargs = url_kwargs
         self.name = name
+        self.csrf_exempt = csrf_exempt
         self.view_kwargs = view_kwargs
 
     def urlpatterns(self, stack: tuple[APIMiddleware, ...]):
@@ -301,16 +304,14 @@ class Route(APIMiddleware):
                 "".join(m.path for m in stack if isinstance(m, Route)) + self.path
             )
             self.view_class.check(url_pattern)
-            yield path(
-                self.path,
-                self.view_class.as_view(
-                    middleware=stack,
-                    url_pattern=url_pattern,
-                    **self.view_kwargs,
-                ),
-                kwargs=self.url_kwargs,
-                name=self.name,
+            view = self.view_class.as_view(
+                middleware=stack,
+                url_pattern=url_pattern,
+                **self.view_kwargs,
             )
+            if self.csrf_exempt:
+                view = csrf_exempt(view)
+            yield path(self.path, view, kwargs=self.url_kwargs, name=self.name)
         # Gather the patterns for any children of this route.
         patterns = []
         new_stack = stack + (self,)
@@ -326,6 +327,7 @@ def api_endpoint(
     view_class: type[APIView],
     url_kwargs: dict[str, Any] | None = None,
     name: str | None = None,
+    csrf_exempt: bool = True,
     **view_kwargs: Any,
 ):
     return Route(
@@ -333,6 +335,7 @@ def api_endpoint(
         view_class,
         url_kwargs=url_kwargs,
         name=name,
+        csrf_exempt=csrf_exempt,
         **view_kwargs,
     ).to_urlpattern()
 
