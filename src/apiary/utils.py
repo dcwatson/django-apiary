@@ -39,7 +39,13 @@ def build_data(request: HttpRequest) -> QueryDict:
     if request.method != "GET":
         if request.content_type == "application/json":
             json_data = msgspec.json.decode(request.body, type=dict, strict=False)
-            data.update(json_data)
+            for key, value in json_data.items():
+                # If the top level value is a list, extend instead of appending a list.
+                list_values = data.setlistdefault(key)
+                if isinstance(value, list):
+                    list_values.extend(value)
+                else:
+                    list_values.append(value)
         else:
             data.update(request.POST)
     return data
